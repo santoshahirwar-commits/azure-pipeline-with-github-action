@@ -12,6 +12,10 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   terraform:
     name: Terraform Preprod
@@ -23,45 +27,18 @@ jobs:
 
     steps:
 
-      # 1. Checkout Repository
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # 3. Azure Login
       - name: Azure Login
         uses: azure/login@v2
         with:
-          auth-type: SERVICE_PRINCIPAL
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # 4. Check Terraform Version
       - name: Terraform Version
         run: terraform version
-
-      # 5. Terraform Format
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-
-      # 6. Terraform Init
-      - name: Terraform Init
-        run: terraform init -upgrade
-
-      # 7. Terraform Validate
-      - name: Terraform Validate
-        run: terraform validate
-
-      # 8. Terraform Plan
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
-      # 9. Terraform Apply
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve tfplan
