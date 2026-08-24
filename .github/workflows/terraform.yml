@@ -12,7 +12,6 @@ on:
 
   workflow_dispatch:
 
-# Required for GitHub OIDC authentication with Azure
 permissions:
   id-token: write
   contents: read
@@ -27,49 +26,39 @@ jobs:
         working-directory: ./azure-pipeline-with-github-action/environment/preprod
 
     steps:
-
-      # 1. Checkout Repository
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # 3. Azure Login using OIDC
       - name: Azure Login
         uses: azure/login@v2
         with:
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          auth-type: SERVICE_PRINCIPAL
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # 4. Verify Azure Login
-      - name: Check Azure Account
+      - name: Check Azure Login
         run: az account show
 
-      # 5. Check Terraform Version
       - name: Terraform Version
         run: terraform version
 
-      # 6. Terraform Format Check
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
 
-      # 7. Terraform Init
       - name: Terraform Init
         run: terraform init -upgrade
 
-      # 8. Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
-      # 9. Terraform Plan
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # 10. Terraform Apply only on main
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
